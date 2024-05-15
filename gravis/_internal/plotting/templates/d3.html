@@ -1464,7 +1464,7 @@
             const knownEdgeIds = new Set(),
               ignoredEdges = [],
               edgeDefinedMetadata = new Set(
-                ["color", "opacity", "size", "label_color", "label_size", "hover", "click"]),
+                ["color", "opacity", "size", "label_color", "label_size", "hover", "click", "flnk_mul", "flnk_dist"]),
               edgeReplacementVariables = [
                 "id", "label",
                 "color", "opacity", "size", "label_color", "label_size"];
@@ -1512,6 +1512,10 @@
                 parsedEdge.click = click;
                 parsedData.general.contains_edge_click = true;
               }
+              const flnk_mul = state.manager.rawMetadataParser.getFiniteNumber(givenEdge, "flnk_mul", null);
+              parsedEdge.flnk_mul = flnk_mul;
+              const flnk_dist = state.manager.rawMetadataParser.getFinitePositiveNumber(givenEdge, "flnk_dist", null);
+              parsedEdge.flnk_dist = flnk_dist;
               // other metadata
               const otherMetadata = state.manager.rawMetadataParser.collectOtherMetadata(givenEdge, parsedEdge, edgeDefinedMetadata);
               // feature classification
@@ -1728,6 +1732,12 @@
               }
               if(typeof(parsedEdge.click) !== "undefined"){
                 shownEdge.click = parsedEdge.click;
+              }
+              if(typeof(parsedEdge.flnk_mul) !== "undefined" && parsedEdge.flnk_mul !== null && !isNaN(parsedEdge.flnk_mul)){
+                shownEdge.flnk_mul = parsedEdge.flnk_mul;
+              }
+              if(typeof(parsedEdge.flnk_dist) !== "undefined" && parsedEdge.flnk_dist !== null && !isNaN(parsedEdge.flnk_dist)){
+                shownEdge.flnk_dist = parsedEdge.flnk_dist;
               }
               // Derived properties for performance improvement in updateEdgePositions
               shownEdge.multi_edge_curvature_factor = state.manager.calcSingleEdgeCurvatureFactor(parsedEdge);
@@ -3503,14 +3513,14 @@
                     state.shownData.edgeCounts = count;
                   }
                   linksForce = d3.forceLink(state.shownData.edges)
-                    .distance(state.linksForceDistance)
+                    .distance(d => typeof(d.flnk_dist) !== "undefined" ? d.flnk_dist : state.linksForceDistance)
                     .strength(function(d) {
                       // Adapted from https://github.com/d3/d3-force/blob/master/src/link.js
                       const fixedConnectivity = Math.min(
                         state.shownData.edgeCounts[d.source.id],
                         state.shownData.edgeCounts[d.target.id]
                       );
-                      const adjustableStrength = 2.0 * state.linksForceStrength;
+                      const adjustableStrength = 2.0 * state.linksForceStrength * (typeof(d.flnk_mul) !== "undefined" ? d.flnk_mul : 1.0);
                       return adjustableStrength / fixedConnectivity;
                     });
                 }
