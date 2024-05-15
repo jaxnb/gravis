@@ -6,6 +6,8 @@ from collections.abc import Iterable as _Iterable
 from ..utils import operating_system as _operating_system
 from . import convert as _convert
 
+import inspect
+
 
 def normalize_graph_data(data):
     """Get graph data in various forms and convert it to a single, unified form (gJGF).
@@ -106,7 +108,8 @@ def is_known_graph_object(data):
             ('igraph.graph' in dtype) or \
             ('networkit' in dtype) or \
             ('networkx.classes' in dtype) or \
-            ('snap' in dtype)
+            ('snap' in dtype) or \
+            (any(['networkx.classes' in str(item).lower() for item in inspect.getmro(type(data))]))
     except Exception:
         pass
     return result

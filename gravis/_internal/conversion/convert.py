@@ -10,6 +10,8 @@ with images inside nodes that do not rely on any external resources.
 from ..utils.web import image_to_data_url, image_to_html_element
 from . import _internal
 
+import inspect
+
 
 def any_to_gjgf(graph):
     """Convert a graph object from a supported library to gJGF.
@@ -37,7 +39,7 @@ def any_to_gjgf(graph):
         gjgf = igraph_to_gjgf(graph)
     elif 'networkit' in dtype:
         gjgf = networkit_to_gjgf(graph)
-    elif 'networkx.classes' in dtype:
+    elif 'networkx.classes' in dtype or (any(['networkx.classes' in str(item).lower() for item in inspect.getmro(type(graph))])):
         gjgf = networkx_to_gjgf(graph)
     elif 'snap' in dtype:
         gjgf = snap_to_gjgf(graph)
