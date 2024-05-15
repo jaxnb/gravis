@@ -275,7 +275,7 @@ def d3(data,
     # Transformation
     site_template = _ts.load('templates/d3.html')
     insert_data = {
-        'DEFINE_D3': _ts.load('third_party/d3/d3.v7.min.def.js'),
+        'DEFINE_D3': _ts.load('third_party/d3/d3.v7.def.js'),
 
         'DATA': _ts.to_json(data),
         'GRAPH_HEIGHT': _ts.to_json(graph_height),
@@ -348,4 +348,5 @@ def d3(data,
     }
     html = _ts.insert(site_template, insert_data)
     fig = _ds.Figure(html)
+    fig._gjgf = data
     return fig

@@ -1385,6 +1385,24 @@
               if(y !== null){
                 parsedNode.fy = y;
               }
+              if ('fpx_target' in givenNode.metadata) {
+                try{
+                  let fpx_target = parseFloat(givenNode.metadata['fpx_target']);
+                  parsedNode.fpx_target = fpx_target;
+                } catch(e){
+                  let fpx_target = givenNode.metadata['fpx_target'];
+                  parsedNode.fpx_target = fpx_target;
+                }
+              }
+              if ('fpy_target' in givenNode.metadata) {
+                try{
+                  let fpy_target = parseFloat(givenNode.metadata['fpy_target']);
+                  parsedNode.fpy_target = fpy_target;
+                } catch(e){
+                  let fpy_target = givenNode.metadata['fpy_target'];
+                  parsedNode.fpy_target = fpy_target;
+                }
+              }
               // other metadata
               const otherMetadata = state.manager.rawMetadataParser.collectOtherMetadata(givenNode, parsedNode, nodeDefinedMetadata);
               // feature classification
@@ -1407,7 +1425,7 @@
               nodeIdToObjectMap.set(parsedNode.id, parsedNode);
             }
             // Ensure numeric properties (except fx and fy) are stored as numbers and remember their extrema
-            const numericProperties = Array.from(state.manager.propertyClassifier.numeric).filter(name => name !== "fx" && name !== "fy"),
+            const numericProperties = Array.from(state.manager.propertyClassifier.numeric).filter(name => name !== "fx" && name !== "fy" && name !== "fpx_target" && name !== "fpy_target"),
               nonNumericProperties = Array.from(state.manager.propertyClassifier.nonNumeric),
               minima = {},
               maxima = {};
@@ -1674,6 +1692,12 @@
               }
               if(typeof(parsedNode.fy) !== "undefined"){
                 shownNode.fy = parsedNode.fy;
+              }
+              if(typeof(parsedNode.fpx_target) !== "undefined"){
+                shownNode.fpx_target = parsedNode.fpx_target;
+              }
+              if(typeof(parsedNode.fpy_target) !== "undefined"){
+                shownNode.fpy_target = parsedNode.fpy_target;
               }
               nodeIdToObjectMap.set(shownNode.id, shownNode);
               // Derived properties for performance improvement in updateNodePositions
@@ -3515,8 +3539,8 @@
                 let xPositioningForce = null;
                 if(state.useXPositioningForce){
                   xPositioningForce = d3.forceX()
-                    .strength(state.xPositioningForceStrength)
-                    .x(0.0);
+                    .strength(d => typeof(d.fpx_target) !== "undefined" ? state.xPositioningForceStrength : 0.0)
+                    .x(d => typeof(d.fpx_target) !== "undefined" ? d.fpx_target : 0.0);
                 }
                 this.simulation.force("x-positioning", xPositioningForce);
               },
@@ -3524,8 +3548,8 @@
                 let yPositioningForce = null;
                 if(state.useYPositioningForce){
                   yPositioningForce = d3.forceY()
-                    .strength(state.yPositioningForceStrength)
-                    .y(0.0);
+                    .strength(d => typeof(d.fpy_target) !== "undefined" ? state.yPositioningForceStrength : 0.0)
+                    .y(d => typeof(d.fpy_target) !== "undefined" ? d.fpy_target : 0.0);
                 }
                 this.simulation.force("y-positioning", yPositioningForce);
               },
@@ -4196,6 +4220,11 @@
 
       // Start website dynamics
       app.start();
+
+      // Add to globals (for debugging)
+      globalThis.gravis_state = state;
+      globalThis.gravis_ui = ui;
+      globalThis.gravis_app = app;
     });
   </script>
 §SUFFIX§
