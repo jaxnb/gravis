@@ -305,6 +305,7 @@
       box-sizing: content-box;
       white-space: pre-wrap;
       word-break: break-word;
+      color: black;
     }
     #§RANDOM_ID§-details-user-provided ul {
       list-style-position: inside;
@@ -1016,6 +1017,21 @@
               </div>
             </div>
           </div>
+          <!-- Sub-menu: Custom forces -->
+          <div>
+            <div class="§RANDOM_ID§-menu-subitem-head">
+              Custom forces
+            </div>
+            <div class="§RANDOM_ID§-menu-subitem-body">
+              <div class="§RANDOM_ID§-labeled-input">
+                <input class="§RANDOM_ID§-checkbox"
+                       id="§RANDOM_ID§-custom-forces-checkbox"
+                       type="checkbox">
+                <label class="§RANDOM_ID§-label"
+                       for="§RANDOM_ID§-custom-forces-checkbox">On</label>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -1081,6 +1097,9 @@
             state.edgeLabelFont = §EDGE_LABEL_FONT§;
             // Layout algorithm
             state.layoutAlgorithmActive = §LAYOUT_ALGORITHM_ACTIVE§;
+            state.layoutAlphaInitial = §LAYOUT_ALPHA_INITIAL§;
+            state.layoutAlphaDecay = §LAYOUT_ALPHA_DECAY§;
+            state.layoutVelocityDecay = §LAYOUT_VELOCITY_DECAY§;
             state.useManyBodyForce = §USE_MANY_BODY_FORCE§;
             state.manyBodyForceStrength = §MANY_BODY_FORCE_STRENGTH§;
             state.manyBodyForceTheta = §MANY_BODY_FORCE_THETA§;
@@ -1099,6 +1118,8 @@
             state.useYPositioningForce = §USE_Y_POSITIONING_FORCE§;
             state.yPositioningForceStrength = §Y_POSITIONING_FORCE_STRENGTH§;
             state.useCenteringForce = §USE_CENTERING_FORCE§;
+            state.customForces = §CUSTOM_FORCES§;
+            state.useCustomForces = §USE_CUSTOM_FORCES§;
             // Other
             state.initZoomFactor = §ZOOM_FACTOR§;
             state.largeGraphThreshold = §LARGE_GRAPH_THRESHOLD§;
@@ -1385,7 +1406,7 @@
               if(y !== null){
                 parsedNode.fy = y;
               }
-              if ('fpx_target' in givenNode.metadata) {
+              if (typeof(givenNode.metadata) !== 'undefined' && 'fpx_target' in givenNode.metadata) {
                 try{
                   let fpx_target = parseFloat(givenNode.metadata['fpx_target']);
                   parsedNode.fpx_target = fpx_target;
@@ -1394,7 +1415,7 @@
                   parsedNode.fpx_target = fpx_target;
                 }
               }
-              if ('fpy_target' in givenNode.metadata) {
+              if (typeof(givenNode.metadata) !== 'undefined' && 'fpy_target' in givenNode.metadata) {
                 try{
                   let fpy_target = parseFloat(givenNode.metadata['fpy_target']);
                   parsedNode.fpy_target = fpy_target;
@@ -1402,6 +1423,11 @@
                   let fpy_target = givenNode.metadata['fpy_target'];
                   parsedNode.fpy_target = fpy_target;
                 }
+              }
+              if (typeof(givenNode.metadata) !== 'undefined' && 'customdata' in givenNode.metadata) {
+                parsedNode.customdata = givenNode.metadata['customdata'];
+              } else {
+                parsedNode.customdata = '';
               }
               // other metadata
               const otherMetadata = state.manager.rawMetadataParser.collectOtherMetadata(givenNode, parsedNode, nodeDefinedMetadata);
@@ -1464,7 +1490,7 @@
             const knownEdgeIds = new Set(),
               ignoredEdges = [],
               edgeDefinedMetadata = new Set(
-                ["color", "opacity", "size", "label_color", "label_size", "hover", "click", "flnk_mul", "flnk_dist"]),
+                ["color", "opacity", "size", "label_color", "label_size", "hover", "click", "flnk_mul", "flnk_dist", "dasharray"]),
               edgeReplacementVariables = [
                 "id", "label",
                 "color", "opacity", "size", "label_color", "label_size"];
@@ -1516,6 +1542,10 @@
               parsedEdge.flnk_mul = flnk_mul;
               const flnk_dist = state.manager.rawMetadataParser.getFinitePositiveNumber(givenEdge, "flnk_dist", null);
               parsedEdge.flnk_dist = flnk_dist;
+              const dasharray = state.manager.rawMetadataParser.getString(givenEdge, "dasharray", null);
+              parsedEdge.dasharray = dasharray;
+              const customdata = state.manager.rawMetadataParser.getString(givenEdge, "customdata", "");
+              parsedEdge.customdata = customdata;
               // other metadata
               const otherMetadata = state.manager.rawMetadataParser.collectOtherMetadata(givenEdge, parsedEdge, edgeDefinedMetadata);
               // feature classification
@@ -1703,6 +1733,11 @@
               if(typeof(parsedNode.fpy_target) !== "undefined"){
                 shownNode.fpy_target = parsedNode.fpy_target;
               }
+              if(typeof(parsedNode.customdata) !== "undefined"){
+                shownNode.customdata = parsedNode.customdata;
+              } else {
+                shownNode.customdata = '';
+              }
               nodeIdToObjectMap.set(shownNode.id, shownNode);
               // Derived properties for performance improvement in updateNodePositions
               state.manager.calcSingleNodeSizeDerivatives(shownNode);
@@ -1739,6 +1774,8 @@
               if(typeof(parsedEdge.flnk_dist) !== "undefined" && parsedEdge.flnk_dist !== null && !isNaN(parsedEdge.flnk_dist)){
                 shownEdge.flnk_dist = parsedEdge.flnk_dist;
               }
+              shownEdge.dasharray = parsedEdge.dasharray;
+              shownEdge.customdata = parsedEdge.customdata;
               // Derived properties for performance improvement in updateEdgePositions
               shownEdge.multi_edge_curvature_factor = state.manager.calcSingleEdgeCurvatureFactor(parsedEdge);
               // Data structure for highlighting adjacent nodes and incident edges to this node
@@ -2121,6 +2158,7 @@
           yPositioningForceStrengthText: document.getElementById("§RANDOM_ID§-y-positioning-force-strength-text"),
           yPositioningForceStrengthSlider: document.getElementById("§RANDOM_ID§-y-positioning-force-strength-slider"),
           centeringForceCheckbox: document.getElementById("§RANDOM_ID§-centering-force-checkbox"),
+          customForcesCheckbox: document.getElementById("§RANDOM_ID§-custom-forces-checkbox"),
         },
 
         composites:{
@@ -3165,6 +3203,7 @@
                 .attr("stroke", d => d.color)
                 .attr("stroke-opacity", d => d.opacity)
                 .attr("stroke-width", d => d.size)
+                .attr("stroke-dasharray", d => d.dasharray)
                 .attr("stroke-linecap", "round");
               // - Arrow marker for directed graphs
               if(data.general.directed){
@@ -3455,10 +3494,12 @@
               simulation: null,
               initialize() {
                 this.simulation = d3.forceSimulation(state.shownData.nodes);
+                this.simulation.alphaDecay(state.layoutAlphaDecay);
+                this.simulation.velocityDecay(state.layoutVelocityDecay);
               },
               move(){
                 if(state.layoutAlgorithmActive){
-                  this.simulation.alpha(1.0);
+                  this.simulation.alpha(state.layoutAlphaInitial);
                   this.simulation.restart();
                 }
               },
@@ -3479,6 +3520,7 @@
                 this.setManyBodyForce();
                 this.setXPositioningForce();
                 this.setYPositioningForce();
+                this.setCustomForces();
               },
               setCenteringForce(){
                 let centeringForce = null;
@@ -3562,6 +3604,25 @@
                     .y(d => typeof(d.fpy_target) !== "undefined" ? d.fpy_target : 0.0);
                 }
                 this.simulation.force("y-positioning", yPositioningForce);
+              },
+              setCustomForces(){
+                for (let i = 0; i < state.customForces.length; i++) {
+                  const simforcename = "custom-force-" + i;
+                  if(state.useCustomForces) {
+                    const force_codes = state.customForces[i];
+                    let cfs = "";
+                    cfs += "var nodes; " + force_codes['vars'] + ";";
+                    cfs += "function force(alpha) {" + force_codes['force'] + "}";
+                    cfs += "function initialize() {" + force_codes['init'] + "}";
+                    cfs += "force.initialize = function(_) { nodes = _; initialize(); };";
+                    cfs += "return force;";
+                    let custom_force = new Function(cfs);
+                    let force = custom_force();
+                    this.simulation.force(simforcename, force);
+                  } else {
+                    this.simulation.force(simforcename, null);
+                  }
+                }
               },
             },
           },
@@ -3686,6 +3747,7 @@
           ui.elements.yPositioningForceStrengthText.innerHTML = ui.convert.numberToText(state.yPositioningForceStrength);
           ui.elements.yPositioningForceStrengthSlider.value = state.yPositioningForceStrength;
           ui.elements.centeringForceCheckbox.checked = state.useCenteringForce;
+          ui.elements.customForcesCheckbox.checked = state.useCustomForces;
 
           ui.initSelectionValues();
         },
@@ -4194,6 +4256,11 @@
           ui.elements.centeringForceCheckbox.onchange = function(){
             state.useCenteringForce = this.checked;
             ui.composites.graph.simulationManager.setCenteringForce();
+            ui.composites.graph.simulationManager.move();
+          };
+          ui.elements.customForcesCheckbox.onchange = function(){
+            state.useCustomForces = this.checked;
+            ui.composites.graph.simulationManager.setCustomForces();
             ui.composites.graph.simulationManager.move();
           };
         },

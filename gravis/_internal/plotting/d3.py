@@ -25,6 +25,7 @@ def d3(data,
        edge_label_size_factor=1.0, edge_label_rotation=0.0, edge_label_font='Arial',
        zoom_factor=0.75, large_graph_threshold=500,
        layout_algorithm_active=True,
+       layout_alpha_initial=1.0, layout_alpha_decay=0.02276277904, layout_velocity_decay=0.4,
        use_many_body_force=True, many_body_force_strength=-70.0,
        many_body_force_theta=0.9,
        use_many_body_force_min_distance=False, many_body_force_min_distance=10.0,
@@ -34,7 +35,8 @@ def d3(data,
        collision_force_strength=0.7,
        use_x_positioning_force=False, x_positioning_force_strength=0.2,
        use_y_positioning_force=False, y_positioning_force_strength=0.2,
-       use_centering_force=True):
+       use_centering_force=True,
+       use_custom_forces=False, custom_forces=[]):
     """Create an interactive graph visualization with HTML/CSS/JS based on d3.v7.js.
 
     Parameters
@@ -145,6 +147,12 @@ def d3(data,
         means that before visualizing it an initial layout is calculated without moving anything.
     layout_algorithm_active : bool
         If True, the layout algorithm is active on load and leads to movement, otherwise inactive.
+    layout_alpha_initial : int, float
+
+    layout_alpha_decay : int, float
+
+    layout_velocity_decay : int, float
+    
     use_many_body_force : bool
         If True, many body force is active in the layout algorithm.
         This force acts between any pair of nodes but can be restricted to only act on nodes
@@ -200,6 +208,11 @@ def d3(data,
         This force attracts each node towards the center of the coordinate system at (0, 0)
         to keep the graph in the display area. It may lead to unexpected repulsion effects
         if all nodes are fixed and then a single one is released by dragging it.
+    use_custom_forces : bool
+        If True, custom forces are active in the layout algorithm.
+    custom_forces : list[str]
+        A list of strings that represent d3.js compatible force functions. A force function
+        is a JavaScript function that takes
 
     Returns
     -------
@@ -252,6 +265,9 @@ def d3(data,
     _ca(zoom_factor, 'zoom_factor', (int, float))
     _ca(large_graph_threshold, 'large_graph_threshold', (int, float))
     _ca(layout_algorithm_active, 'layout_algorithm_active', bool)
+    _ca(layout_alpha_initial, 'layout_alpha_initial', (int, float))
+    _ca(layout_alpha_decay, 'layout_alpha_decay', (int, float))
+    _ca(layout_velocity_decay, 'layout_velocity_decay', (int, float))
     _ca(use_many_body_force, 'use_many_body_force', bool)
     _ca(many_body_force_strength, 'many_body_force_strength', (int, float))
     _ca(many_body_force_theta, 'many_body_force_theta', (int, float))
@@ -270,6 +286,8 @@ def d3(data,
     _ca(use_y_positioning_force, 'use_y_positioning_force', bool)
     _ca(y_positioning_force_strength, 'y_positioning_force_strength', (int, float))
     _ca(use_centering_force, 'use_centering_force', bool)
+    _ca(use_custom_forces, 'use_custom_forces', bool)
+    _ca(custom_forces, 'custom_forces', list)
     data = _internal.normalize_graph_data(data)
 
     # Transformation
@@ -325,6 +343,9 @@ def d3(data,
         'LARGE_GRAPH_THRESHOLD': _ts.to_json(large_graph_threshold),
 
         'LAYOUT_ALGORITHM_ACTIVE': _ts.to_json(layout_algorithm_active),
+        'LAYOUT_ALPHA_INITIAL': _ts.to_json(layout_alpha_initial),
+        'LAYOUT_ALPHA_DECAY': _ts.to_json(layout_alpha_decay),
+        'LAYOUT_VELOCITY_DECAY': _ts.to_json(layout_velocity_decay),
         'USE_MANY_BODY_FORCE': _ts.to_json(use_many_body_force),
         'MANY_BODY_FORCE_STRENGTH': _ts.to_json(many_body_force_strength),
         'MANY_BODY_FORCE_THETA': _ts.to_json(many_body_force_theta),
@@ -345,6 +366,8 @@ def d3(data,
         'USE_Y_POSITIONING_FORCE': _ts.to_json(use_y_positioning_force),
         'Y_POSITIONING_FORCE_STRENGTH': _ts.to_json(y_positioning_force_strength),
         'USE_CENTERING_FORCE': _ts.to_json(use_centering_force),
+        'USE_CUSTOM_FORCES': _ts.to_json(use_custom_forces),
+        'CUSTOM_FORCES': _ts.to_json(custom_forces)
     }
     html = _ts.insert(site_template, insert_data)
     fig = _ds.Figure(html)
