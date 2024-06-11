@@ -2952,6 +2952,9 @@
               nodeGroups.on("mouseout.neighborhood", mouseoutNeighborhood);
               // - Node click behavior: details in separate container
               function nodeClicked(event, node){
+                if(node.opacity == 0.0){
+                  return;
+                }
                 let htmlText = "<div>Node: " + String(node.id) + "</div>";
                 if(typeof(node.click) !== "undefined" && node.click !== ""){
                   htmlText += '<div id="§RANDOM_ID§-details-user-provided">' + node.click + '</div>';
@@ -3271,6 +3274,9 @@
               }
               // - Edge click behavior
               function edgeClicked(event, edge){
+                if(edge.opacity == 0.0){
+                  return;
+                }
                 let htmlText = "<div>Edge: " + String(edge.id) + "</div>";
                 if(typeof(edge.click) !== "undefined" && edge.click !== ""){
                   htmlText += '<div id="§RANDOM_ID§-details-user-provided">' + edge.click + '</div>';
