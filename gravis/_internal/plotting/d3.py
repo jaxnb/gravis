@@ -13,7 +13,7 @@ def d3(data,
        show_node=True, node_size_factor=1.0,
        node_size_data_source='size', use_node_size_normalization=False,
        node_size_normalization_min=5.0, node_size_normalization_max=75.0,
-       node_drag_fix=False, node_hover_neighborhood=False, node_hover_tooltip=True,
+       node_drag_fix=False, node_details_neighborhood=False, node_hover_neighborhood=False, node_hover_tooltip=True,
        show_node_image=True, node_image_size_factor=1.0,
        show_node_label=True, show_node_label_border=True, node_label_data_source='id',
        node_label_size_factor=1.0, node_label_rotation=0.0, node_label_font='Arial',
@@ -85,6 +85,9 @@ def d3(data,
     node_drag_fix : bool
         If True, the position of a node becomes fixed after dragging it, i.e. the
         layout algorithm does not change its position but the user can drag it again.
+    node_details_neighborhood : bool
+        If True, viewing the details of a node leads to highlighting its neighborhood which consists of
+        all incident edges and adjacent nodes.
     node_hover_neighborhood : bool
         If True, hovering a node leads to highlighting its neighborhood which consists of
         all incident edges and adjacent nodes.
@@ -238,6 +241,7 @@ def d3(data,
     _ca(node_size_normalization_min, 'node_size_normalization_min', (int, float))
     _ca(node_size_normalization_max, 'node_size_normalization_max', (int, float))
     _ca(node_drag_fix, 'node_drag_fix', bool)
+    _ca(node_details_neighborhood, 'node_details_neighborhood', bool)
     _ca(node_hover_neighborhood, 'node_hover_neighborhood', bool)
     _ca(node_hover_tooltip, 'node_hover_tooltip', bool)
     _ca(show_node_image, 'show_node_image', bool)
@@ -310,6 +314,7 @@ def d3(data,
         'NODE_SIZE_NORMALIZATION_MIN': _ts.to_json(node_size_normalization_min),
         'NODE_SIZE_NORMALIZATION_MAX': _ts.to_json(node_size_normalization_max),
         'NODE_DRAG_FIX': _ts.to_json(node_drag_fix),
+        'NODE_DETAILS_NEIGHBORHOOD': _ts.to_json(node_details_neighborhood),
         'NODE_HOVER_NEIGHBORHOOD': _ts.to_json(node_hover_neighborhood),
         'NODE_HOVER_TOOLTIP': _ts.to_json(node_hover_tooltip),
 

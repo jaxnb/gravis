@@ -321,7 +321,7 @@
         <div id="§RANDOM_ID§-graph-div"></div>
         <div id="§RANDOM_ID§-details-div">
           <div id="§RANDOM_ID§-details-head">
-            Details for selected element
+            Details for selected element   <button class="§RANDOM_ID§-button" id="§RANDOM_ID§-clear-details-button" type="button">Clear</button>
           </div>
           <div id="§RANDOM_ID§-details-body">
           </div>
@@ -1076,6 +1076,7 @@
             state.showNodes = §SHOW_NODE§;
             state.nodeSizeFactor = §NODE_SIZE_FACTOR§;
             state.nodeDragFix = §NODE_DRAG_FIX§;
+            state.nodeDetailsNeighborhood = §NODE_DETAILS_NEIGHBORHOOD§;
             state.nodeHoverNeighborhood = §NODE_HOVER_NEIGHBORHOOD§;
             state.nodeHoverTooltip = §NODE_HOVER_TOOLTIP§;
             state.showNodeImages = §SHOW_NODE_IMAGE§;
@@ -2020,7 +2021,8 @@
             }
             ui.composites.graph.updateEdgeLabelPositions();
           },
-        }
+        },
+        nodeDetailsNeighborhoodActive: false,
       }
 
       const ui = {
@@ -2046,6 +2048,7 @@
           detailsContainer: document.getElementById("§RANDOM_ID§-details-div"),
           detailsHead: document.getElementById("§RANDOM_ID§-details-head"),
           detailsBody: document.getElementById("§RANDOM_ID§-details-body"),
+          clearDetailsButton: document.getElementById("§RANDOM_ID§-clear-details-button"),
           // Data sources
           dataHead: document.getElementById("§RANDOM_ID§-data-head"),
           dataBody: document.getElementById("§RANDOM_ID§-data-body"),
@@ -2080,6 +2083,7 @@
           nodeSizeFactorText: document.getElementById("§RANDOM_ID§-node-size-factor-text"),
           nodeSizeFactorSlider: document.getElementById("§RANDOM_ID§-node-size-factor-slider"),
           nodeDragFixCheckbox: document.getElementById("§RANDOM_ID§-node-drag-fix-checkbox"),
+          nodeDetailsNeighborhoodCheckbox: document.getElementById("§RANDOM_ID§-node-details-neighborhood-checkbox"),
           nodeHoverNeighborhoodCheckbox: document.getElementById("§RANDOM_ID§-node-hover-neighborhood-checkbox"),
           nodeHoverTooltipCheckbox: document.getElementById("§RANDOM_ID§-node-hover-tooltip-checkbox"),
           nodeReleaseButton: document.getElementById("§RANDOM_ID§-node-release-button"),
@@ -2602,6 +2606,23 @@
                 .attr("height", state.graphContainerHeight)
                 .attr("fill", state.shownData.general.background_color);
               state.currentGraphParts.backgroundRect = backgroundRect;
+              backgroundRect.on("click", function(event){
+                if (event.detail === 1) {
+                  // Single click: Clear details
+                  ui.elements.detailsBody.innerHTML = "";
+                  if(state.nodeDetailsNeighborhood && state.nodeDetailsNeighborhoodActive){
+                    function resetOpacity(d){
+                      return 1.0;
+                    }
+                    if(state.showNodes) state.currentGraphParts.nodeGroups.attr("opacity", resetOpacity);
+                    if(state.showNodeImages) state.currentGraphParts.nodeImageGroups.attr("opacity", resetOpacity);
+                    if(state.showNodeLabels) state.currentGraphParts.nodeLabelGroups.attr("opacity", resetOpacity);
+                    if(state.showEdges) state.currentGraphParts.edgeGroups.attr("opacity", resetOpacity);
+                    if(state.showEdgeLabels) state.currentGraphParts.edgeLabelGroups.attr("opacity", resetOpacity);
+                    state.nodeDetailsNeighborhoodActive = false;
+                  }
+                }
+              })
               // - Zoomable and draggable group as graph drawing area
               const view = svg.append("g").attr("id", "§RANDOM_ID§-zoomable-graph-group");
               state.currentGraphParts.view = view;
@@ -2883,61 +2904,52 @@
                   return lowerOpacity;
                 }
               }
-              function resetOpacity(d){
-                return 1.0;
-              }
-              function highlightNodeNeighborhood(event, node){
-                if(state.nodeHoverNeighborhood){
-                  const adjacentNodes = state.shownData.adjacency.map.get(node),
-                    incidentEdges = state.shownData.incidence.map.get(node);
-                  if(state.showNodes){
-                    state.currentGraphParts.nodeGroups
-                      .attr("opacity", d => setNodeOpacityByAdjacency(d, node, adjacentNodes, 0.2));
-                  }
-                  if(state.showNodeImages){
-                    state.currentGraphParts.nodeImageGroups
-                      .attr("opacity", dIndex => setNodeOpacityByAdjacency(state.shownData.nodes[dIndex], node, adjacentNodes, 0.12));
-                  }
-                  if(state.showNodeLabels){
-                    state.currentGraphParts.nodeLabelGroups
-                      .attr("opacity", dIndex => setNodeOpacityByAdjacency(state.shownData.nodes[dIndex], node, adjacentNodes, 0.07));
-                  }
-                  if(state.showEdges){
-                    state.currentGraphParts.edgeGroups
-                      .attr("opacity", d => setEdgeOpacityByIncidence(d, incidentEdges, 0.07));
-                  }
-                  if(state.showEdgeLabels){
-                    state.currentGraphParts.edgeLabelGroups
-                      .attr("opacity", dIndex => setEdgeOpacityByIncidence(state.shownData.edges[dIndex], incidentEdges, 0.07));
-                  }
+              function highlightNodeNeighborhood(node){
+                const adjacentNodes = state.shownData.adjacency.map.get(node),
+                  incidentEdges = state.shownData.incidence.map.get(node);
+                if(state.showNodes){
+                  state.currentGraphParts.nodeGroups
+                    .attr("opacity", d => setNodeOpacityByAdjacency(d, node, adjacentNodes, 0.2));
+                }
+                if(state.showNodeImages){
+                  state.currentGraphParts.nodeImageGroups
+                    .attr("opacity", dIndex => setNodeOpacityByAdjacency(state.shownData.nodes[dIndex], node, adjacentNodes, 0.12));
+                }
+                if(state.showNodeLabels){
+                  state.currentGraphParts.nodeLabelGroups
+                    .attr("opacity", dIndex => setNodeOpacityByAdjacency(state.shownData.nodes[dIndex], node, adjacentNodes, 0.07));
+                }
+                if(state.showEdges){
+                  state.currentGraphParts.edgeGroups
+                    .attr("opacity", d => setEdgeOpacityByIncidence(d, incidentEdges, 0.07));
+                }
+                if(state.showEdgeLabels){
+                  state.currentGraphParts.edgeLabelGroups
+                    .attr("opacity", dIndex => setEdgeOpacityByIncidence(state.shownData.edges[dIndex], incidentEdges, 0.07));
                 }
               }
-              function unhighlightNodeNeighborhood(event, node){
-                if(state.nodeHoverNeighborhood){
-                  if(state.showNodes){
-                    state.currentGraphParts.nodeGroups
-                      .attr("opacity", resetOpacity);
-                  }
-                  if(state.showNodeImages){
-                    state.currentGraphParts.nodeImageGroups
-                      .attr("opacity", resetOpacity);
-                  }
-                  if(state.showNodeLabels){
-                    state.currentGraphParts.nodeLabelGroups
-                      .attr("opacity", resetOpacity);
-                  }
-                  if(state.showEdges){
-                    state.currentGraphParts.edgeGroups
-                      .attr("opacity", resetOpacity);
-                  }
-                  if(state.showEdgeLabels){
-                    state.currentGraphParts.edgeLabelGroups
-                      .attr("opacity", resetOpacity);
-                  }
+              function unhighlightNodeNeighborhood(){
+                function resetOpacity(d){
+                  return 1.0;
+                }
+                if(state.showNodes) state.currentGraphParts.nodeGroups.attr("opacity", resetOpacity);
+                if(state.showNodeImages) state.currentGraphParts.nodeImageGroups.attr("opacity", resetOpacity);
+                if(state.showNodeLabels) state.currentGraphParts.nodeLabelGroups.attr("opacity", resetOpacity);
+                if(state.showEdges) state.currentGraphParts.edgeGroups.attr("opacity", resetOpacity);
+                if(state.showEdgeLabels) state.currentGraphParts.edgeLabelGroups.attr("opacity", resetOpacity);
+              }
+              function mouseoverNeighborhood(event, node){
+                if(state.nodeHoverNeighborhood && !state.nodeDetailsNeighborhoodActive){
+                  highlightNodeNeighborhood(node);
                 }
               }
-              nodeGroups.on("mouseover.neighborhood", highlightNodeNeighborhood);
-              nodeGroups.on("mouseout.neighborhood", unhighlightNodeNeighborhood);
+              function mouseoutNeighborhood(event, node){
+                if(state.nodeHoverNeighborhood && !state.nodeDetailsNeighborhoodActive){
+                  unhighlightNodeNeighborhood();
+                }
+              }
+              nodeGroups.on("mouseover.neighborhood", mouseoverNeighborhood);
+              nodeGroups.on("mouseout.neighborhood", mouseoutNeighborhood);
               // - Node click behavior: details in separate container
               function nodeClicked(event, node){
                 let htmlText = "<div>Node: " + String(node.id) + "</div>";
@@ -2945,6 +2957,10 @@
                   htmlText += '<div id="§RANDOM_ID§-details-user-provided">' + node.click + '</div>';
                 }
                 ui.elements.detailsBody.innerHTML = htmlText;
+                if(state.nodeDetailsNeighborhood){
+                  state.nodeDetailsNeighborhoodActive = true;
+                  highlightNodeNeighborhood(node);
+                }
               }
               nodeGroups.on("click", nodeClicked);
               // - Node drag behavior: position fixation or release
@@ -3260,6 +3276,17 @@
                   htmlText += '<div id="§RANDOM_ID§-details-user-provided">' + edge.click + '</div>';
                 }
                 ui.elements.detailsBody.innerHTML = htmlText;
+                if(state.nodeDetailsNeighborhood && state.nodeDetailsNeighborhoodActive){
+                  function resetOpacity(d){
+                    return 1.0;
+                  }
+                  if(state.showNodes) state.currentGraphParts.nodeGroups.attr("opacity", resetOpacity);
+                  if(state.showNodeImages) state.currentGraphParts.nodeImageGroups.attr("opacity", resetOpacity);
+                  if(state.showNodeLabels) state.currentGraphParts.nodeLabelGroups.attr("opacity", resetOpacity);
+                  if(state.showEdges) state.currentGraphParts.edgeGroups.attr("opacity", resetOpacity);
+                  if(state.showEdgeLabels) state.currentGraphParts.edgeLabelGroups.attr("opacity", resetOpacity);
+                  state.nodeDetailsNeighborhoodActive = false;
+                }
               }
               edgeGroups.on("click", edgeClicked);
               // 3) Position new elements
@@ -3880,6 +3907,20 @@
           // Data menu
           ui.elements.dataHead.onclick = function(){
             ui.composites.menu.toggleItem(ui.elements.dataHead, ui.elements.dataBody);
+          };
+          ui.elements.clearDetailsButton.onclick = function(){
+            ui.elements.detailsBody.innerHTML = "";
+            if(state.nodeDetailsNeighborhood && state.nodeDetailsNeighborhoodActive){
+              function resetOpacity(d){
+                return 1.0;
+              }
+              if(state.showNodes) state.currentGraphParts.nodeGroups.attr("opacity", resetOpacity);
+              if(state.showNodeImages) state.currentGraphParts.nodeImageGroups.attr("opacity", resetOpacity);
+              if(state.showNodeLabels) state.currentGraphParts.nodeLabelGroups.attr("opacity", resetOpacity);
+              if(state.showEdges) state.currentGraphParts.edgeGroups.attr("opacity", resetOpacity);
+              if(state.showEdgeLabels) state.currentGraphParts.edgeLabelGroups.attr("opacity", resetOpacity);
+              state.nodeDetailsNeighborhoodActive = false;
+            }
           };
           // - Graph selection
           ui.elements.graphSelection.onchange = function(){
