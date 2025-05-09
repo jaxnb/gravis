@@ -1407,6 +1407,8 @@
               if(y !== null){
                 parsedNode.fy = y;
               }
+              const xi = state.manager.rawMetadataParser.getFiniteNumber(givenNode, "xi", NaN);
+              const yi = state.manager.rawMetadataParser.getFiniteNumber(givenNode, "yi", NaN);
               if (typeof(givenNode.metadata) !== 'undefined' && 'fpx_target' in givenNode.metadata) {
                 try{
                   let fpx_target = parseFloat(givenNode.metadata['fpx_target']);
@@ -1425,6 +1427,8 @@
                   parsedNode.fpy_target = fpy_target;
                 }
               }
+              parsedNode.x = !isNaN(xi) ? xi : ((typeof(parsedNode.fpx_target) !== 'undefined' && !isNaN(parsedNode.fpx_target)) ? parsedNode.fpx_target : NaN);
+              parsedNode.y = !isNaN(yi) ? yi : ((typeof(parsedNode.fpy_target) !== 'undefined' && !isNaN(parsedNode.fpy_target)) ? parsedNode.fpy_target : NaN);
               if (typeof(givenNode.metadata) !== 'undefined' && 'customdata' in givenNode.metadata) {
                 parsedNode.customdata = givenNode.metadata['customdata'];
               } else {
@@ -1727,6 +1731,12 @@
               }
               if(typeof(parsedNode.fy) !== "undefined"){
                 shownNode.fy = parsedNode.fy;
+              }
+              if(state.useXPositioningForce){
+                shownNode.x = parsedNode.x;
+              }
+              if(state.useYPositioningForce){
+                shownNode.y = parsedNode.y;
               }
               if(typeof(parsedNode.fpx_target) !== "undefined"){
                 shownNode.fpx_target = parsedNode.fpx_target;
